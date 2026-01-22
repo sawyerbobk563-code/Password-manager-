@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShieldVault | Zero-Knowledge Password Manager</title>
+    
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" id="manifest-link">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+        
+        .glass-card-dark {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hidden-vault { 
+            display: none; 
+        }
+        
+        .entry-card { 
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        
+        .entry-card:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .password-field {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .floating-button {
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .shake {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4f46e5;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
+        .theme-dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+        }
+        
+        .theme-dark .glass-card {
+            background: rgba(30, 41, 59, 0.85);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .theme-dark .text-slate-800 {
+            color: #f1f5f9;
+        }
+        
+        .theme-dark .text-slate-700 {
+            color: #e2e8f0;
+        }
+        
+        .theme-dark .text-slate-600 {
+            color: #cbd5e1;
+        }
+        
+        .theme-dark .text-slate-500 {
+            color: #94a3b8;
+        }
+        
+        .theme-dark .text-slate-400 {
+            color: #64748b;
+        }
+        
+        .theme-dark .bg-slate-100 {
+            background-color: rgba(30, 41, 59, 0.7);
+        }
+        
+        .theme-dark .border-slate-200 {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .theme-dark input, .theme-dark select {
+            background-color: rgba(15, 23, 42, 0.7);
+            color: #f8fafc;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .theme-dark input::placeholder {
+            color: #94a3b8;
+        }
+        
+        .theme-dark .bg-white {
+            background-color: rgba(30, 41, 59, 0.9);
+        }
+        
+        .theme-dark .shadow-sm {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .theme-dark .shadow-md {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .theme-dark .shadow-lg {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .theme-dark .shadow-xl {
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .copy-success {
+            animation: copyPulse 0.5s ease;
+        }
+        
+        @keyframes copyPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (min-width: 768px) {
+            .split-layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+            }
+            
+            #app {
+                max-width: 1200px;
+            }
+            
+            .fixed-bottom-wide {
+                left: 50%;
+                transform: translateX(-50%);
+                width: 100%;
+                max-width: 1200px;
+            }
+        }
+        
+        .tutorial-step {
+            position: relative;
+            z-index: 100;
+        }
+        
+        .highlight {
+            animation: highlight 2s ease-in-out;
+        }
+        
+        @keyframes highlight {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+            50% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0.2); }
+        }
+        
+        /* Info Modal Styles */
+        .info-modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .password-criteria-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        
+        .criteria-met {
+            color: #10b981;
+        }
+        
+        .criteria-not-met {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans">
+    <!-- Info Button -->
+    <button id="info-button" onclick="showInfoModal()" class="fixed bottom-24 right-6 z-40 w-12 h-12 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center">
+        <i class="fas fa-info text-lg"></i>
+    </button>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="glass-card w-full max-w-2xl mx-4 p-8 rounded-2xl relative info-modal-content">
+            <button onclick="closeInfoModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-3xl text-indigo-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">About ShieldVault</h2>
+                <p class="text-slate-600 mt-2">Zero-Knowledge Password Manager</p>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-semibold text-slate-800 text-lg mb-2">How It Works</h3>
+                    <p class="text-slate-600 text-sm">
+                        ShieldVault uses zero-knowledge encryption, meaning your master password and encrypted data never leave your device. 
+                        Your passwords are encrypted locally using AES-GCM 256-bit encryption before being synced to the cloud.
+                        Only you can decrypt your data with your master password.
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-slate-800 text-lg mb-2">Security Features</h3>
+                    <ul class="text-slate-600 text-sm space-y-2">
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5"></i>
+                            <span>End-to-end encryption (AES-GCM 256-bit)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5"></i>
+                            <span>Zero-knowledge architecture</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5"></i>
+                            <span>Client-side encryption & decryption</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5"></i>
+                            <span>Secure password generator</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5"></i>
+                            <span>Password strength analysis</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-slate-800 text-lg mb-2">What Makes a Strong Password?</h3>
+                    <div class="text-slate-600 text-sm space-y-3">
+                        <div class="password-criteria-item">
+                            <i class="fas fa-check-circle criteria-met"></i>
+                            <span><strong>Length:</strong> At least 12 characters (preferably 16+)</span>
+                        </div>
+                        <div class="password-criteria-item">
+                            <i class="fas fa-check-circle criteria-met"></i>
+                            <span><strong>Complexity:</strong> Mix of uppercase, lowercase, numbers, and symbols</span>
+                        </div>
+                        <div class="password-criteria-item">
+                            <i class="fas fa-check-circle criteria-met"></i>
+                            <span><strong>Uniqueness:</strong> Different password for each account</span>
+                        </div>
+                        <div class="password-criteria-item">
+                            <i class="fas fa-times-circle criteria-not-met"></i>
+                            <span><strong>Avoid:</strong> Dictionary words, personal information, common patterns</span>
+                        </div>
+                        <div class="password-criteria-item">
+                            <i class="fas fa-times-circle criteria-not-met"></i>
+                            <span><strong>Avoid:</strong> Password reuse across multiple sites</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-indigo-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-indigo-800 text-lg mb-2">Having Problems?</h3>
+                    <p class="text-indigo-700 text-sm">
+                        Contact support: 
+                        <a href="mailto:sawyerbobk563@gmail.com" class="font-medium underline hover:text-indigo-900">
+                            sawyerbobk563@gmail.com
+                        </a>
+                    </p>
+                    <p class="text-indigo-600 text-xs mt-2">
+                        For security reasons, we cannot recover your master password if you forget it. 
+                        Please ensure you remember it or store it in a secure location.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-slate-200">
+                <button onclick="closeInfoModal()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3.5 rounded-xl hover:opacity-90 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Tutorial Modal -->
+    <div id="tutorial-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="glass-card w-full max-w-2xl mx-4 p-8 rounded-2xl relative">
+            <button onclick="closeTutorial()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-graduation-cap text-3xl text-indigo-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Welcome to ShieldVault!</h2>
+                <p class="text-slate-600 mt-2">Let's get you started with your secure password manager</p>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-indigo-600 font-bold">1</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">Add Your First Password</h3>
+                        <p class="text-slate-600 text-sm mt-1">Use the form on the left to add your first password entry. All data is encrypted before it leaves your device.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-indigo-600 font-bold">2</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">Use the Password Generator</h3>
+                        <p class="text-slate-600 text-sm mt-1">Click the key icon to generate strong, unique passwords for each account.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-indigo-600 font-bold">3</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">Save to Cloud</h3>
+                        <p class="text-slate-600 text-sm mt-1">Click "Save to Cloud" to securely sync your encrypted vault. Your master password is never stored.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-indigo-600 font-bold">4</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">Export & Backup</h3>
+                        <p class="text-slate-600 text-sm mt-1">Use the Export buttons to create JSON or CSV backups of your vault for safekeeping.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-slate-200">
+                <div class="flex items-center justify-center gap-2 text-sm text-slate-500">
+                    <input type="checkbox" id="dont-show-again" class="rounded">
+                    <label for="dont-show-again">Don't show this tutorial again</label>
+                </div>
+                
+                <button onclick="closeTutorial()" class="w-full mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3.5 rounded-xl hover:opacity-90 transition">
+                    Get Started
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="max-w-6xl mx-auto pt-6 pb-32 px-4">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-indigo-600 tracking-tight flex items-center gap-2">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>ShieldVault</span>
+                </h1>
+                <p class="text-slate-500 text-sm">Zero-Knowledge Password Manager</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400">Dark</span>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Auth Section -->
+        <div id="auth-section" class="glass-card p-8 rounded-2xl shadow-xl fade-in max-w-md mx-auto">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-2xl text-indigo-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Unlock Your Vault</h2>
+                <p class="text-slate-500 text-sm mt-1">Access your encrypted passwords</p>
+            </div>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Vault Name</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-3.5 text-slate-400"></i>
+                        <input type="text" id="username" class="w-full pl-10 p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="e.g. my-private-vault">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Master Password</label>
+                    <div class="relative">
+                        <i class="fas fa-key absolute left-3 top-3.5 text-slate-400"></i>
+                        <input type="password" id="master-password" class="w-full pl-10 p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Keep this safe!">
+                        <button onclick="togglePasswordVisibility('master-password')" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                        <i class="fas fa-info-circle"></i>
+                        Your password is never sent to our servers
+                    </p>
+                </div>
+                <button onclick="unlockVault()" id="unlock-btn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3.5 rounded-xl hover:opacity-90 transition-all active:scale-98 shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-unlock-alt"></i>
+                    <span>Access Vault</span>
+                </button>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-slate-100">
+                <p class="text-xs text-slate-500 text-center">New user? Just enter a vault name and password to create one.</p>
+            </div>
+        </div>
+
+        <!-- Vault Section -->
+        <div id="vault-section" class="hidden-vault">
+            <!-- Vault Header -->
+            <div class="glass-card p-5 rounded-2xl shadow-md flex justify-between items-center slide-up mb-6">
+                <div>
+                    <p class="text-xs uppercase font-semibold text-slate-400 flex items-center gap-1">
+                        <i class="fas fa-vault"></i>
+                        Active Vault
+                    </p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="font-bold text-indigo-600 text-lg" id="display-user"></span>
+                        <div class="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-medium">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            <span id="entry-count">0</span> passwords
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-xs text-slate-500 hidden md:block">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Last sync: <span id="last-sync-time">Never</span>
+                    </div>
+                    <button onclick="confirmLockVault()" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-red-50 hover:text-red-600 transition flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Lock Vault</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Split Layout for Desktop -->
+            <div class="split-layout">
+                <!-- Left Column - Add New Entry -->
+                <div class="space-y-6">
+                    <!-- Add New Entry -->
+                    <div class="glass-card p-6 rounded-2xl shadow-md slide-up">
+                        <p class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-plus-circle text-indigo-500"></i>
+                            Add New Account
+                        </p>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 mb-1">Website/App</label>
+                                    <input type="text" id="new-site" placeholder="e.g. Google" class="w-full p-2.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-400 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                                    <select id="new-category" class="w-full p-2.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-400 outline-none transition">
+                                        <option value="General">General</option>
+                                        <option value="Social">Social Media</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Work">Work</option>
+                                        <option value="Shopping">Shopping</option>
+                                        <option value="Entertainment">Entertainment</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Username/Email</label>
+                                <input type="text" id="new-user" placeholder="username@example.com" class="w-full p-2.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-400 outline-none transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Password</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <input type="text" id="new-pass" placeholder="Generate or enter password" class="w-full p-2.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-400 outline-none transition password-field">
+                                        <button onclick="togglePasswordVisibility('new-pass')" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="generatePassword()" class="bg-indigo-100 text-indigo-700 px-3 rounded-lg font-medium hover:bg-indigo-200 transition flex items-center" title="Generate Password">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        <button onclick="addEntry()" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:opacity-90 transition flex items-center gap-2">
+                                            <i class="fas fa-plus"></i>
+                                            <span class="hidden sm:inline">Add</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between mt-2">
+                                    <div class="text-xs text-slate-400">
+                                        Strength: <span id="password-strength" class="font-medium">None</span>
+                                    </div>
+                                    <button onclick="suggestPassword()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                                        <i class="fas fa-bolt mr-1"></i>
+                                        Suggest Strong Password
+                                    </button>
+                                </div>
+                                <!-- Password Criteria -->
+                                <div id="password-criteria" class="mt-2 text-xs space-y-1 hidden">
+                                    <div class="flex items-center justify-between">
+                                        <span>Length (≥12 chars):</span>
+                                        <span id="criteria-length" class="text-red-500">✗</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Uppercase letters:</span>
+                                        <span id="criteria-uppercase" class="text-red-500">✗</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Lowercase letters:</span>
+                                        <span id="criteria-lowercase" class="text-red-500">✗</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Numbers:</span>
+                                        <span id="criteria-numbers" class="text-red-500">✗</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Special characters:</span>
+                                        <span id="criteria-special" class="text-red-500">✗</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Statistics -->
+                    <div class="glass-card p-6 rounded-2xl shadow-md slide-up">
+                        <p class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-indigo-500"></i>
+                            Enhanced Statistics
+                        </p>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 p-3 rounded-lg">
+                                    <div class="text-xs text-slate-500">Strong Passwords</div>
+                                    <div class="text-xl font-bold text-emerald-600" id="stats-strong">0</div>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg">
+                                    <div class="text-xs text-slate-500">Weak Passwords</div>
+                                    <div class="text-xl font-bold text-red-600" id="stats-weak">0</div>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-slate-600">Average Password Age:</span>
+                                    <span class="font-medium text-slate-800" id="stats-age">0 days</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-slate-600">Password Reuse:</span>
+                                    <span class="font-medium text-slate-800" id="stats-reuse">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-slate-600">Short Passwords (<12 chars):</span>
+                                    <span class="font-medium text-slate-800" id="stats-short">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vault Tools -->
+                    <div class="glass-card p-6 rounded-2xl shadow-md slide-up">
+                        <p class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-toolbox text-indigo-500"></i>
+                            Vault Tools
+                        </p>
+                        
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="exportVault('json')" class="bg-white border border-slate-200 py-3 rounded-xl font-medium hover:bg-slate-50 transition flex items-center justify-center gap-2">
+                                    <i class="fas fa-file-export text-emerald-600"></i>
+                                    Export JSON
+                                </button>
+                                <button onclick="exportVault('csv')" class="bg-white border border-slate-200 py-3 rounded-xl font-medium hover:bg-slate-50 transition flex items-center justify-center gap-2">
+                                    <i class="fas fa-file-csv text-blue-600"></i>
+                                    Export CSV
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="bg-white border border-slate-200 py-3 rounded-xl font-medium hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer">
+                                    <i class="fas fa-file-import text-amber-600"></i>
+                                    Import JSON
+                                    <input type="file" id="import-json-file" class="hidden" accept=".json" onchange="importVault(event, 'json')">
+                                </label>
+                                <label class="bg-white border border-slate-200 py-3 rounded-xl font-medium hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer">
+                                    <i class="fas fa-file-import text-purple-600"></i>
+                                    Import CSV
+                                    <input type="file" id="import-csv-file" class="hidden" accept=".csv" onchange="importVault(event, 'csv')">
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-4 border-t border-slate-100">
+                            <p class="text-xs text-slate-400 text-center italic flex items-center justify-center gap-1">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Exported files are NOT encrypted. Keep them safe!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Entries List -->
+                <div class="space-y-6">
+                    <!-- Search Bar -->
+                    <div class="glass-card p-4 rounded-2xl shadow-sm slide-up">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                            <input type="text" id="search-input" onkeyup="searchEntries()" class="w-full pl-10 p-3 rounded-lg border-0 focus:ring-2 focus:ring-indigo-400 outline-none bg-transparent" placeholder="Search passwords...">
+                            <button onclick="clearSearch()" id="clear-search" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 hidden">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center mt-3">
+                            <div class="text-xs text-slate-500">
+                                Showing <span id="showing-count">0</span> of <span id="total-count">0</span> passwords
+                            </div>
+                            <div class="flex gap-2">
+                                <select id="sort-select" onchange="sortEntries(this.value)" class="text-xs text-slate-700 px-2 py-1.5 rounded border border-slate-200 bg-white focus:ring-1 focus:ring-indigo-400 outline-none">
+                                    <option value="site-asc">Name (A-Z)</option>
+                                    <option value="site-desc">Name (Z-A)</option>
+                                    <option value="category">Category</option>
+                                    <option value="strength">Password Strength</option>
+                                    <option value="recent">Recently Added</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Entries List -->
+                    <div id="entries-list" class="space-y-4 max-h-[600px] overflow-y-auto pr-2"></div>
+                    
+                    <!-- Empty State -->
+                    <div id="empty-state" class="py-16 text-center hidden">
+                        <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-lock-open text-3xl text-indigo-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-slate-700">Your vault is empty</h3>
+                        <p class="text-slate-500 text-sm mt-1 max-w-xs mx-auto">Add your first password using the form on the left. Your data is encrypted before it leaves your device.</p>
+                        <button onclick="document.getElementById('new-site').focus()" class="mt-4 text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center gap-2 mx-auto">
+                            <i class="fas fa-arrow-left"></i>
+                            Go to Add Password Form
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Last Sync Info -->
+            <div class="mt-8 text-center">
+                <div class="inline-flex items-center gap-2 text-sm text-slate-500 bg-white/50 px-4 py-2 rounded-full">
+                    <i class="fas fa-cloud"></i>
+                    <span>Last sync: <span id="last-sync-bottom" class="font-medium">Never</span></span>
+                    <div class="w-2 h-2 bg-slate-300 rounded-full ml-1" id="sync-status-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Floating Sync Button -->
+            <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-6xl px-4">
+                <button onclick="saveToCloud()" id="sync-btn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-2xl font-bold shadow-xl hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2 floating-button">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Save to Cloud</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Generator Modal -->
+    <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="glass-card w-full max-w-md mx-4 p-6 rounded-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-800">Password Generator</h3>
+                <button onclick="closePasswordModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-5">
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="text-sm font-medium text-slate-700">Length: <span id="length-value">12</span></label>
+                    </div>
+                    <input type="range" id="password-length" min="8" max="32" value="12" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" oninput="updatePasswordLength()">
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-slate-700">Include Uppercase Letters</label>
+                        <label class="switch">
+                            <input type="checkbox" id="include-uppercase" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-slate-700">Include Lowercase Letters</label>
+                        <label class="switch">
+                            <input type="checkbox" id="include-lowercase" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-slate-700">Include Numbers</label>
+                        <label class="switch">
+                            <input type="checkbox" id="include-numbers" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-slate-700">Include Symbols</label>
+                        <label class="switch">
+                            <input type="checkbox" id="include-symbols" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-sm font-medium text-slate-700">Generated Password</label>
+                        <button onclick="copyGeneratedPassword()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                            <i class="fas fa-copy mr-1"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <div class="flex">
+                        <input type="text" id="generated-password" class="flex-1 p-3 rounded-l-lg border border-slate-200 font-mono text-sm" readonly>
+                        <button onclick="regeneratePassword()" class="bg-indigo-100 text-indigo-700 p-3 rounded-r-lg hover:bg-indigo-200 transition">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between">
+                        <div class="text-xs text-slate-500">
+                            Strength: <span id="generated-strength" class="font-medium">Strong</span>
+                        </div>
+                        <div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div id="strength-bar" class="h-full bg-emerald-500 w-3/4"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button onclick="useGeneratedPassword()" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition">
+                        Use Password
+                    </button>
+                    <button onclick="closePasswordModal()" class="flex-1 bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-200 transition">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- PWA SETUP ---
+        const manifest = {
+            "name": "ShieldVault",
+            "short_name": "Vault",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#f8fafc",
+            "theme_color": "#4f46e5",
+            "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/2092/2092663.png", "sizes": "512x512", "type": "image/png"}]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(blob));
+
+        // --- CONFIG ---
+        const WORKER_URL = "https://password-manager-api.sawyerbobk563.workers.dev"; 
+        let vaultData = [];
+        let encryptionKey = null;
+        let currentSalt = null;
+        let filteredData = [];
+        let isDarkTheme = false;
+        let lastSyncTime = null;
+        let isFirstLogin = false;
+
+        // Initialize theme
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('shieldvault-theme');
+            isDarkTheme = savedTheme === 'dark';
+            
+            if (isDarkTheme) {
+                document.body.classList.add('theme-dark');
+                document.getElementById('theme-toggle').checked = true;
+            }
+        }
+        
+        // Toggle theme
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            
+            if (isDarkTheme) {
+                document.body.classList.add('theme-dark');
+                localStorage.setItem('shieldvault-theme', 'dark');
+            } else {
+                document.body.classList.remove('theme-dark');
+                localStorage.setItem('shieldvault-theme', 'light');
+            }
+        }
+
+        // --- CRYPTO ---
+        async function deriveKey(password, salt) {
+            const encoder = new TextEncoder();
+            const baseKey = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
+            return await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+        }
+
+        async function encrypt(text, key) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoded = new TextEncoder().encode(text);
+            const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+            return { data: btoa(String.fromCharCode(...new Uint8Array(ciphertext))), iv: btoa(String.fromCharCode(...iv)) };
+        }
+
+        async function decrypt(encryptedObj, key) {
+            try {
+                const iv = new Uint8Array(atob(encryptedObj.iv).split("").map(c => c.charCodeAt(0)));
+                const data = new Uint8Array(atob(encryptedObj.data).split("").map(c => c.charCodeAt(0)));
+                const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+                return new TextDecoder().decode(decrypted);
+            } catch (e) { return null; }
+        }
+
+        // --- ENHANCED PASSWORD STRENGTH CHECKER ---
+        function checkPasswordStrength(password) {
+            if (!password) return { text: "None", score: 0 };
+            
+            let score = 0;
+            let criteria = {
+                length: false,
+                uppercase: false,
+                lowercase: false,
+                numbers: false,
+                special: false
+            };
+            
+            // Length check
+            if (password.length >= 8) score += 1;
+            if (password.length >= 12) { score += 1; criteria.length = true; }
+            
+            // Character type checks
+            if (/[A-Z]/.test(password)) { score += 1; criteria.uppercase = true; }
+            if (/[a-z]/.test(password)) { score += 1; criteria.lowercase = true; }
+            if (/[0-9]/.test(password)) { score += 1; criteria.numbers = true; }
+            if (/[^A-Za-z0-9]/.test(password)) { score += 1; criteria.special = true; }
+            
+            // Bonus for mixed character types and length
+            if (criteria.uppercase && criteria.lowercase && criteria.numbers && criteria.special) score += 1;
+            if (password.length >= 16) score += 1;
+            
+            const strengthMap = [
+                { text: "Very Weak", color: "text-red-500", score: 0 },
+                { text: "Weak", color: "text-orange-500", score: 1 },
+                { text: "Fair", color: "text-yellow-500", score: 2 },
+                { text: "Good", color: "text-lime-500", score: 3 },
+                { text: "Strong", color: "text-emerald-500", score: 4 },
+                { text: "Very Strong", color: "text-green-600", score: 5 },
+                { text: "Excellent", color: "text-green-700", score: 6 }
+            ];
+            
+            return {
+                ...strengthMap[Math.min(score, strengthMap.length - 1)],
+                criteria: criteria,
+                score: score
+            };
+        }
+
+        // --- UPDATE PASSWORD CRITERIA DISPLAY ---
+        function updatePasswordCriteria(password) {
+            const criteria = document.getElementById('password-criteria');
+            const strength = checkPasswordStrength(password);
+            
+            if (password.length > 0) {
+                criteria.classList.remove('hidden');
+                document.getElementById('criteria-length').textContent = strength.criteria.length ? '✓' : '✗';
+                document.getElementById('criteria-length').className = strength.criteria.length ? 'text-emerald-500' : 'text-red-500';
+                
+                document.getElementById('criteria-uppercase').textContent = strength.criteria.uppercase ? '✓' : '✗';
+                document.getElementById('criteria-uppercase').className = strength.criteria.uppercase ? 'text-emerald-500' : 'text-red-500';
+                
+                document.getElementById('criteria-lowercase').textContent = strength.criteria.lowercase ? '✓' : '✗';
+                document.getElementById('criteria-lowercase').className = strength.criteria.lowercase ? 'text-emerald-500' : 'text-red-500';
+                
+                document.getElementById('criteria-numbers').textContent = strength.criteria.numbers ? '✓' : '✗';
+                document.getElementById('criteria-numbers').className = strength.criteria.numbers ? 'text-emerald-500' : 'text-red-500';
+                
+                document.getElementById('criteria-special').textContent = strength.criteria.special ? '✓' : '✗';
+                document.getElementById('criteria-special').className = strength.criteria.special ? 'text-emerald-500' : 'text-red-500';
+            } else {
+                criteria.classList.add('hidden');
+            }
+        }
+
+        // --- CALCULATE ENHANCED STATISTICS ---
+        function calculateEnhancedStats() {
+            let strongCount = 0;
+            let weakCount = 0;
+            let shortCount = 0;
+            const now = new Date();
+            let totalAgeDays = 0;
+            const passwordMap = {};
+            let duplicateCount = 0;
+            
+            vaultData.forEach(entry => {
+                const strength = checkPasswordStrength(entry.pass);
+                if (strength.score >= 4) {
+                    strongCount++;
+                } else if (strength.score <= 2) {
+                    weakCount++;
+                }
+                
+                if (entry.pass.length < 12) {
+                    shortCount++;
+                }
+                
+                // Calculate password age
+                if (entry.created) {
+                    const createdDate = new Date(entry.created);
+                    const ageDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+                    totalAgeDays += ageDays;
+                }
+                
+                // Check for password reuse
+                if (passwordMap[entry.pass]) {
+                    passwordMap[entry.pass]++;
+                    duplicateCount++;
+                } else {
+                    passwordMap[entry.pass] = 1;
+                }
+            });
+            
+            const avgAge = vaultData.length > 0 ? Math.floor(totalAgeDays / vaultData.length) : 0;
+            
+            // Update UI
+            document.getElementById('stats-strong').textContent = strongCount;
+            document.getElementById('stats-weak').textContent = weakCount;
+            document.getElementById('stats-age').textContent = `${avgAge} days`;
+            document.getElementById('stats-reuse').textContent = duplicateCount;
+            document.getElementById('stats-short').textContent = shortCount;
+        }
+
+        // --- PASSWORD GENERATOR ---
+        function generateRandomPassword(length = 12, options = {
+            uppercase: true,
+            lowercase: true,
+            numbers: true,
+            symbols: true
+        }) {
+            const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const lowercase = "abcdefghijklmnopqrstuvwxyz";
+            const numbers = "0123456789";
+            const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+            
+            let chars = "";
+            if (options.uppercase) chars += uppercase;
+            if (options.lowercase) chars += lowercase;
+            if (options.numbers) chars += numbers;
+            if (options.symbols) chars += symbols;
+            
+            // Ensure at least one character from each selected set
+            let password = "";
+            if (options.uppercase) password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+            if (options.lowercase) password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+            if (options.numbers) password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+            if (options.symbols) password += symbols.charAt(Math.floor(Math.random() * symbols.length));
+            
+            // Fill the rest with random characters
+            for (let i = password.length; i < length; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            // Shuffle the password
+            return password.split('').sort(() => Math.random() - 0.5).join('');
+        }
+
+        // --- PASSWORD VISIBILITY TOGGLE ---
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = field.parentNode.querySelector('i');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // --- SUGGEST PASSWORD ---
+        function suggestPassword() {
+            const password = generateRandomPassword(14, {
+                uppercase: true,
+                lowercase: true,
+                numbers: true,
+                symbols: true
+            });
+            
+            document.getElementById('new-pass').value = password;
+            
+            // Update strength indicator
+            const strength = checkPasswordStrength(password);
+            document.getElementById('password-strength').textContent = strength.text;
+            document.getElementById('password-strength').className = `font-medium ${strength.color}`;
+            
+            // Update criteria display
+            updatePasswordCriteria(password);
+        }
+
+        // --- TUTORIAL FUNCTIONS ---
+        function showTutorial() {
+            const dontShowAgain = localStorage.getItem('shieldvault-no-tutorial');
+            if (!dontShowAgain && isFirstLogin) {
+                document.getElementById('tutorial-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeTutorial() {
+            document.getElementById('tutorial-modal').classList.add('hidden');
+            const dontShowAgain = document.getElementById('dont-show-again').checked;
+            if (dontShowAgain) {
+                localStorage.setItem('shieldvault-no-tutorial', 'true');
+            }
+            
+            // Highlight the add password form
+            document.getElementById('new-site').classList.add('highlight');
+            setTimeout(() => {
+                document.getElementById('new-site').classList.remove('highlight');
+            }, 2000);
+        }
+
+        // --- INFO MODAL FUNCTIONS ---
+        function showInfoModal() {
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+
+        function closeInfoModal() {
+            document.getElementById('info-modal').classList.add('hidden');
+        }
+
+        // --- CONFIRM LOCK VAULT ---
+        function confirmLockVault() {
+            if (confirm("Are you sure you want to lock the vault? You'll need to enter your master password again to access it.")) {
+                location.reload();
+            }
+        }
+
+        // --- UPDATE LAST SYNC TIME ---
+        function updateLastSyncTime() {
+            const now = new Date();
+            lastSyncTime = now;
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const dateString = now.toLocaleDateString();
+            const displayString = `${dateString} at ${timeString}`;
+            
+            document.getElementById('last-sync-time').textContent = displayString;
+            document.getElementById('last-sync-bottom').textContent = displayString;
+            document.getElementById('sync-status-indicator').className = 'w-2 h-2 bg-emerald-500 rounded-full ml-1';
+            
+            localStorage.setItem(`shieldvault-lastsync-${document.getElementById('username').value.trim()}`, now.toISOString());
+        }
+
+        // --- ACTIONS ---
+        async function unlockVault() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('master-password').value;
+            
+            if (!user || !pass) {
+                document.getElementById('auth-section').classList.add('shake');
+                setTimeout(() => document.getElementById('auth-section').classList.remove('shake'), 500);
+                return alert("Please enter both vault name and password");
+            }
+            
+            const btn = document.getElementById('unlock-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Connecting...</span>';
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch(`${WORKER_URL}/get?user=${encodeURIComponent(user)}`);
+                const cloudData = await resp.json();
+                
+                currentSalt = (cloudData && cloudData.salt) ? new Uint8Array(atob(cloudData.salt).split("").map(c => c.charCodeAt(0))) : crypto.getRandomValues(new Uint8Array(16));
+                encryptionKey = await deriveKey(pass, currentSalt);
+
+                if (cloudData && cloudData.vault) {
+                    const decrypted = await decrypt(cloudData.vault, encryptionKey);
+                    if (decrypted === null) throw new Error("Wrong Master Password.");
+                    vaultData = JSON.parse(decrypted);
+                    isFirstLogin = false;
+                } else {
+                    vaultData = [];
+                    isFirstLogin = true;
+                }
+                
+                showVault(user);
+                
+                // Check for last sync time
+                const lastSync = localStorage.getItem(`shieldvault-lastsync-${user}`);
+                if (lastSync) {
+                    const lastSyncDate = new Date(lastSync);
+                    const timeString = lastSyncDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const dateString = lastSyncDate.toLocaleDateString();
+                    const displayString = `${dateString} at ${timeString}`;
+                    
+                    document.getElementById('last-sync-time').textContent = displayString;
+                    document.getElementById('last-sync-bottom').textContent = displayString;
+                }
+                
+                // Show tutorial if first login
+                setTimeout(() => {
+                    if (isFirstLogin) {
+                        showTutorial();
+                    }
+                }, 500);
+                
+            } catch (err) {
+                alert(err.message || "Failed to unlock vault. Please check your credentials.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showVault(user) {
+            document.getElementById('auth-section').classList.add('hidden-vault');
+            document.getElementById('vault-section').classList.remove('hidden-vault');
+            document.getElementById('display-user').innerText = user;
+            renderEntries();
+            
+            // Show info button
+            document.getElementById('info-button').classList.remove('hidden');
+        }
+
+        function updateStats() {
+            document.getElementById('entry-count').textContent = vaultData.length;
+            
+            // Update showing counts
+            const showing = filteredData.length > 0 ? filteredData.length : vaultData.length;
+            document.getElementById('showing-count').textContent = showing;
+            document.getElementById('total-count').textContent = vaultData.length;
+            
+            // Calculate enhanced statistics
+            calculateEnhancedStats();
+            
+            // Show/hide empty state
+            document.getElementById('empty-state').style.display = vaultData.length === 0 ? 'block' : 'none';
+        }
+
+        function renderEntries(data = vaultData) {
+            const list = document.getElementById('entries-list');
+            
+            if (data.length === 0) {
+                list.innerHTML = '';
+                document.getElementById('empty-state').style.display = 'block';
+                updateStats();
+                return;
+            }
+            
+            document.getElementById('empty-state').style.display = 'none';
+            
+            list.innerHTML = data.map((item, i) => {
+                const strength = checkPasswordStrength(item.pass);
+                const categoryIcon = getCategoryIcon(item.category);
+                const createdDate = item.created ? new Date(item.created) : new Date();
+                const ageDays = Math.floor((new Date() - createdDate) / (1000 * 60 * 60 * 24));
+                const ageText = ageDays === 0 ? 'Today' : ageDays === 1 ? '1 day ago' : `${ageDays} days ago`;
+                
+                return `
+                <div class="entry-card glass-card p-5 rounded-2xl slide-up">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                                <i class="${categoryIcon} text-indigo-600"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="text-sm font-bold text-slate-800 truncate">${item.site || 'Unnamed'}</div>
+                                    <span class="text-xs px-2 py-0.5 rounded-full ${getCategoryColor(item.category)} flex-shrink-0">${item.category || 'General'}</span>
+                                </div>
+                                <div class="text-sm text-slate-600 truncate">
+                                    <i class="fas fa-user mr-1 text-slate-400"></i>
+                                    ${item.user || 'No username'}
+                                </div>
+                                <div class="mt-3 flex items-center gap-2">
+                                    <div class="font-mono text-sm bg-slate-100 px-3 py-1.5 rounded-lg select-all password-mask">${'•'.repeat(item.pass.length)}</div>
+                                    <div class="flex gap-1">
+                                        <button onclick="copyPassword(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition" title="Copy Password">
+                                            <i class="fas fa-copy text-sm"></i>
+                                        </button>
+                                        <button onclick="revealPassword(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition" title="Reveal Password">
+                                            <i class="fas fa-eye text-sm"></i>
+                                        </button>
+                                        <button onclick="removeEntry(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition" title="Delete">
+                                            <i class="fas fa-trash-alt text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-xs text-slate-400">Strength:</div>
+                                        <div class="text-xs font-medium ${strength.color}">${strength.text}</div>
+                                        <div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                            <div class="h-full ${strength.color.replace('text-', 'bg-')}" style="width: ${(strength.score + 1) * 14}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-slate-400" title="${createdDate.toLocaleString()}">
+                                        Added: ${ageText}
+                                    </div>
+                                </div>
+                                ${item.pass.length < 12 ? `
+                                <div class="mt-2 text-xs text-red-500 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Password is too short (${item.pass.length} chars)
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            updateStats();
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'Social': 'fas fa-users',
+                'Finance': 'fas fa-piggy-bank',
+                'Work': 'fas fa-briefcase',
+                'Shopping': 'fas fa-shopping-cart',
+                'Entertainment': 'fas fa-film',
+                'General': 'fas fa-globe'
+            };
+            return icons[category] || 'fas fa-globe';
+        }
+
+        function getCategoryColor(category) {
+            const colors = {
+                'Social': 'bg-blue-100 text-blue-800',
+                'Finance': 'bg-emerald-100 text-emerald-800',
+                'Work': 'bg-purple-100 text-purple-800',
+                'Shopping': 'bg-amber-100 text-amber-800',
+                'Entertainment': 'bg-pink-100 text-pink-800',
+                'General': 'bg-slate-100 text-slate-800'
+            };
+            return colors[category] || 'bg-slate-100 text-slate-800';
+        }
+
+        function addEntry() {
+            const site = document.getElementById('new-site');
+            const user = document.getElementById('new-user');
+            const pass = document.getElementById('new-pass');
+            const category = document.getElementById('new-category');
+            
+            if (!site.value || !pass.value) {
+                alert("Please enter at least a website and password");
+                return;
+            }
+            
+            vaultData.push({ 
+                site: site.value, 
+                user: user.value || "", 
+                pass: pass.value,
+                category: category.value,
+                created: new Date().toISOString()
+            });
+            
+            site.value = ''; 
+            user.value = ''; 
+            pass.value = '';
+            
+            renderEntries();
+            
+            // Clear search if active
+            document.getElementById('search-input').value = '';
+            document.getElementById('clear-search').classList.add('hidden');
+            filteredData = [];
+            
+            // Hide password criteria
+            document.getElementById('password-criteria').classList.add('hidden');
+            
+            // Show success feedback
+            const addButton = document.querySelector('button[onclick="addEntry()"]');
+            const originalText = addButton.innerHTML;
+            addButton.innerHTML = '<i class="fas fa-check"></i><span class="hidden sm:inline">Added</span>';
+            addButton.classList.add('bg-emerald-500', 'from-emerald-500', 'to-teal-500');
+            
+            setTimeout(() => {
+                addButton.innerHTML = originalText;
+                addButton.classList.remove('bg-emerald-500', 'from-emerald-500', 'to-teal-500');
+            }, 1500);
+        }
+
+        function removeEntry(i) {
+            if(confirm("Are you sure you want to delete this password entry?")) {
+                vaultData.splice(i, 1);
+                renderEntries();
+            }
+        }
+
+        // --- COPY PASSWORD ---
+        function copyPassword(i) {
+            const data = filteredData.length > 0 ? filteredData : vaultData;
+            const password = data[i].pass;
+            navigator.clipboard.writeText(password).then(() => {
+                // Show feedback
+                const buttons = document.querySelectorAll(`button[onclick="copyPassword(${i})"]`);
+                buttons.forEach(btn => {
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i>';
+                    btn.classList.add('copy-success', 'bg-emerald-100', 'text-emerald-700');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('copy-success', 'bg-emerald-100', 'text-emerald-700');
+                    }, 1500);
+                });
+            });
+        }
+
+        // --- REVEAL PASSWORD ---
+        function revealPassword(i) {
+            const data = filteredData.length > 0 ? filteredData : vaultData;
+            const entryCards = document.querySelectorAll('.entry-card');
+            const passwordElement = entryCards[i].querySelector('.password-mask');
+            
+            if (passwordElement.textContent.includes('•')) {
+                passwordElement.textContent = data[i].pass;
+                setTimeout(() => {
+                    passwordElement.textContent = '•'.repeat(data[i].pass.length);
+                }, 3000);
+            }
+        }
+
+        // --- SEARCH FUNCTIONALITY ---
+        function searchEntries() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const clearButton = document.getElementById('clear-search');
+            
+            if (searchTerm) {
+                clearButton.classList.remove('hidden');
+                filteredData = vaultData.filter(entry => 
+                    entry.site.toLowerCase().includes(searchTerm) || 
+                    entry.user.toLowerCase().includes(searchTerm) ||
+                    (entry.category && entry.category.toLowerCase().includes(searchTerm))
+                );
+                renderEntries(filteredData);
+            } else {
+                clearButton.classList.add('hidden');
+                filteredData = [];
+                renderEntries(vaultData);
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('clear-search').classList.add('hidden');
+            filteredData = [];
+            renderEntries(vaultData);
+        }
+
+        // --- ENHANCED SORT FUNCTIONALITY ---
+        function sortEntries(criteria) {
+            const data = filteredData.length > 0 ? filteredData : vaultData;
+            
+            data.sort((a, b) => {
+                switch(criteria) {
+                    case 'site-asc':
+                        return a.site.localeCompare(b.site);
+                    case 'site-desc':
+                        return b.site.localeCompare(a.site);
+                    case 'category':
+                        return (a.category || 'General').localeCompare(b.category || 'General');
+                    case 'strength':
+                        const strengthA = checkPasswordStrength(a.pass).score;
+                        const strengthB = checkPasswordStrength(b.pass).score;
+                        return strengthB - strengthA; // Strongest first
+                    case 'recent':
+                        const dateA = a.created ? new Date(a.created) : new Date(0);
+                        const dateB = b.created ? new Date(b.created) : new Date(0);
+                        return dateB - dateA; // Most recent first
+                    case 'oldest':
+                        const dateA2 = a.created ? new Date(a.created) : new Date(0);
+                        const dateB2 = b.created ? new Date(b.created) : new Date(0);
+                        return dateA2 - dateB2; // Oldest first
+                    default:
+                        return a.site.localeCompare(b.site);
+                }
+            });
+            
+            renderEntries(data);
+        }
+
+        // --- EXPORT / IMPORT LOGIC ---
+        function exportVault(format) {
+            const data = filteredData.length > 0 ? filteredData : vaultData;
+            const timestamp = new Date().toISOString().split('T')[0];
+            
+            if (format === 'json') {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `shieldvault_backup_${timestamp}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                
+                alert("Vault exported as JSON successfully. Keep this file safe!");
+            } else if (format === 'csv') {
+                // Convert to CSV
+                const headers = ['Website', 'Category', 'Username', 'Password', 'Created'];
+                const csvRows = [];
+                
+                // Add headers
+                csvRows.push(headers.join(','));
+                
+                // Add data rows
+                data.forEach(entry => {
+                    const row = [
+                        `"${entry.site.replace(/"/g, '""')}"`,
+                        `"${(entry.category || 'General').replace(/"/g, '""')}"`,
+                        `"${(entry.user || '').replace(/"/g, '""')}"`,
+                        `"${entry.pass.replace(/"/g, '""')}"`,
+                        `"${entry.created || new Date().toISOString()}"`
+                    ];
+                    csvRows.push(row.join(','));
+                });
+                
+                const csvString = csvRows.join('\n');
+                const blob = new Blob([csvString], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('hidden', '');
+                a.setAttribute('href', url);
+                a.setAttribute('download', `shieldvault_backup_${timestamp}.csv`);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                alert("Vault exported as CSV successfully. Keep this file safe!");
+            }
+        }
+
+        function importVault(event, format) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!confirm("Importing will merge passwords with your current vault. Continue?")) {
+                event.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let imported = [];
+                    
+                    if (format === 'json') {
+                        imported = JSON.parse(e.target.result);
+                        if (!Array.isArray(imported)) {
+                            throw new Error("Invalid JSON format");
+                        }
+                    } else if (format === 'csv') {
+                        const csvText = e.target.result;
+                        const lines = csvText.split('\n');
+                        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+                        
+                        for (let i = 1; i < lines.length; i++) {
+                            if (lines[i].trim() === '') continue;
+                            
+                            const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
+                            
+                            const entry = {
+                                site: values[0] || '',
+                                category: values[1] || 'General',
+                                user: values[2] || '',
+                                pass: values[3] || '',
+                                created: values[4] || new Date().toISOString()
+                            };
+                            
+                            imported.push(entry);
+                        }
+                    }
+                    
+                    // Merge with current vault, avoiding duplicates
+                    const existingSites = new Set(vaultData.map(entry => `${entry.site}|${entry.user}`));
+                    const newEntries = imported.filter(entry => !existingSites.has(`${entry.site}|${entry.user}`));
+                    
+                    vaultData = [...vaultData, ...newEntries];
+                    renderEntries();
+                    alert(`${newEntries.length} new passwords imported! Don't forget to click Save to Cloud.`);
+                    
+                } catch (err) {
+                    alert(`Invalid ${format.toUpperCase()} file. Please check the file format. Error: ${err.message}`);
+                }
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // --- CLOUD SYNC ---
+        async function saveToCloud() {
+            const btn = document.getElementById('sync-btn');
+            const user = document.getElementById('username').value.trim();
+            
+            if (!user) {
+                alert("Please enter a vault name first");
+                return;
+            }
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Syncing...</span>';
+            btn.disabled = true;
+            
+            try {
+                const encrypted = await encrypt(JSON.stringify(vaultData), encryptionKey);
+                const saltString = btoa(String.fromCharCode(...currentSalt));
+                const resp = await fetch(`${WORKER_URL}/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, salt: saltString, vault: encrypted })
+                });
+                
+                if (resp.ok) {
+                    btn.innerHTML = '<i class="fas fa-check"></i><span>Synced Successfully</span>';
+                    btn.classList.remove('from-emerald-500', 'to-teal-500');
+                    btn.classList.add('from-green-500', 'to-emerald-500');
+                    
+                    updateLastSyncTime();
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('from-green-500', 'to-emerald-500');
+                        btn.classList.add('from-emerald-500', 'to-teal-500');
+                    }, 2000);
+                } else {
+                    throw new Error("Server responded with an error");
+                }
+            } catch (err) {
+                alert("Sync failed: " + err.message);
+                btn.innerHTML = originalText;
+                document.getElementById('sync-status-indicator').className = 'w-2 h-2 bg-red-500 rounded-full ml-1';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // --- PASSWORD GENERATOR MODAL ---
+        function generatePassword() {
+            // Generate initial password
+            regeneratePassword();
+            
+            // Show modal
+            document.getElementById('password-modal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        function updatePasswordLength() {
+            const length = document.getElementById('password-length').value;
+            document.getElementById('length-value').textContent = length;
+            regeneratePassword();
+        }
+
+        function regeneratePassword() {
+            const length = parseInt(document.getElementById('password-length').value);
+            const includeUppercase = document.getElementById('include-uppercase').checked;
+            const includeLowercase = document.getElementById('include-lowercase').checked;
+            const includeNumbers = document.getElementById('include-numbers').checked;
+            const includeSymbols = document.getElementById('include-symbols').checked;
+            
+            const password = generateRandomPassword(length, {
+                uppercase: includeUppercase,
+                lowercase: includeLowercase,
+                numbers: includeNumbers,
+                symbols: includeSymbols
+            });
+            
+            document.getElementById('generated-password').value = password;
+            
+            // Update strength indicator
+            const strength = checkPasswordStrength(password);
+            document.getElementById('generated-strength').textContent = strength.text;
+            document.getElementById('generated-strength').className = `font-medium ${strength.color}`;
+            
+            // Update strength bar
+            const strengthBar = document.getElementById('strength-bar');
+            strengthBar.className = `h-full ${strength.color.replace('text-', 'bg-')}`;
+            strengthBar.style.width = `${(strength.score + 1) * 14}%`;
+        }
+
+        function copyGeneratedPassword() {
+            const password = document.getElementById('generated-password').value;
+            navigator.clipboard.writeText(password).then(() => {
+                const copyButton = document.querySelector('button[onclick="copyGeneratedPassword()"]');
+                const originalText = copyButton.innerHTML;
+                copyButton.innerHTML = '<i class="fas fa-check"></i> Copied';
+                
+                setTimeout(() => {
+                    copyButton.innerHTML = originalText;
+                }, 1500);
+            });
+        }
+
+        function useGeneratedPassword() {
+            document.getElementById('new-pass').value = document.getElementById('generated-password').value;
+            
+            // Update strength indicator
+            const strength = checkPasswordStrength(document.getElementById('generated-password').value);
+            document.getElementById('password-strength').textContent = strength.text;
+            document.getElementById('password-strength').className = `font-medium ${strength.color}`;
+            
+            // Update criteria display
+            updatePasswordCriteria(document.getElementById('generated-password').value);
+            
+            closePasswordModal();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTheme();
+            
+            // Update password strength in real-time
+            const newPassInput = document.getElementById('new-pass');
+            newPassInput.addEventListener('input', function() {
+                const strength = checkPasswordStrength(this.value);
+                document.getElementById('password-strength').textContent = strength.text;
+                document.getElementById('password-strength').className = `font-medium ${strength.color}`;
+                updatePasswordCriteria(this.value);
+            });
+            
+            // Auto-generate initial password for modal
+            regeneratePassword();
+            
+            // Set sync status indicator
+            document.getElementById('sync-status-indicator').className = 'w-2 h-2 bg-slate-300 rounded-full ml-1';
+        });
+    </script>
+</body>
+</html>
